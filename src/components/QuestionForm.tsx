@@ -1,9 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+
 type DisplayProps = {
-  showForm: boolean;
-};
+   showForm: boolean;
+ };
+
 type Question = {
   question: string;
   options: string[];
@@ -15,9 +17,9 @@ export default function QuestionForm({ showForm }: DisplayProps) {
   ]);
 
   if (!showForm) {
-    return null; 
-  }
-  
+     return null; 
+   }
+
   const handleQuestionChange = (value: string, index: number) => {
     const newQuestions = [...questions];
     newQuestions[index].question = value;
@@ -40,12 +42,30 @@ export default function QuestionForm({ showForm }: DisplayProps) {
     setQuestions(newQuestions);
   };
 
+  const deleteOption = (questionIndex: number, optionIndex: number) => {
+    const confirmDelete = window.confirm('Delete this option?');
+    if (!confirmDelete) return;
+
+    const newQuestions = [...questions];
+    newQuestions[questionIndex].options.splice(optionIndex, 1);
+    setQuestions(newQuestions);
+  };
+
   const handleSubmit = (index: number) => {
     console.log(`Question ${index + 1}:`, questions[index]);
   };
 
   const addQuestion = () => {
     setQuestions([...questions, { question: '', options: [] }]);
+  };
+
+  const deleteQuestion = (index: number) => {
+    const confirmDelete = window.confirm('Are you sure you want to delete this question?');
+    if (!confirmDelete) return;
+
+    const newQuestions = [...questions];
+    newQuestions.splice(index, 1);
+    setQuestions(newQuestions);
   };
 
   return (
@@ -55,17 +75,24 @@ export default function QuestionForm({ showForm }: DisplayProps) {
           key={index}
           className="p-6 border rounded-lg shadow-sm bg-white space-y-4"
         >
-          <div>
+          <div className="flex justify-between items-center">
             <label className="block text-sm font-medium mb-1">
-              {index + 1}
+              Question {index + 1}
             </label>
-            <input
-              type="text"
-              value={q.question}
-              onChange={(e) => handleQuestionChange(e.target.value, index)}
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-blue-200"
-            />
+            <button
+              onClick={() => deleteQuestion(index)}
+              className="text-red-500 text-sm hover:underline"
+            >
+              Delete Question
+            </button>
           </div>
+
+          <input
+            type="text"
+            value={q.question}
+            onChange={(e) => handleQuestionChange(e.target.value, index)}
+            className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-blue-200"
+          />
 
           <div>
             {q.options.map((option, optIndex) => (
@@ -82,6 +109,12 @@ export default function QuestionForm({ showForm }: DisplayProps) {
                   className="px-2 py-1 border rounded-md w-full"
                   placeholder={`Option ${optIndex + 1}`}
                 />
+                <button
+                  onClick={() => deleteOption(index, optIndex)}
+                  className="text-red-500 text-sm hover:underline"
+                >
+                  Delete
+                </button>
               </div>
             ))}
             <button

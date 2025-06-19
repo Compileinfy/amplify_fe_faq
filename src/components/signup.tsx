@@ -1,24 +1,23 @@
 'use client';
+
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
-type FormData = {
-  firstname: string;
-  lastname: string;
-  email: string;
-  password: string;
-};
+import { zodResolver } from '@hookform/resolvers/zod';
+import { signupSchema } from '@/schema/signupSchema';
+import type { FormData } from '@/schema/signupSchema';
 
 const Signup = () => {
-    const router = useRouter();
+  const router = useRouter();
+
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<FormData>(
-    {
-         mode: "onChange",
-    }
-  );
+  } = useForm<FormData>({
+    resolver: zodResolver(signupSchema),
+    mode: 'onChange',
+  });
+
   const onSubmit = (data: FormData) => {
     console.log(data);
   };
@@ -49,13 +48,7 @@ const Signup = () => {
           <label className="block mb-1 text-sm font-medium">Firstname</label>
           <input
             type="text"
-            {...register('firstname', {
-              required: 'Firstname is required',
-              pattern: {
-                value: /^[A-Za-z\s]+$/,
-                message: 'Name must contain only letters',
-              },
-            })}
+            {...register('firstname')}
             className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
           {errors.firstname && (
@@ -67,13 +60,7 @@ const Signup = () => {
           <label className="block mb-1 text-sm font-medium">Lastname</label>
           <input
             type="text"
-            {...register('lastname', {
-              required: 'Lastname is required',
-              pattern: {
-                value: /^[A-Za-z\s]+$/,
-                message: 'Name must contain only letters',
-              },
-            })}
+            {...register('lastname')}
             className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
           {errors.lastname && (
@@ -85,13 +72,7 @@ const Signup = () => {
           <label className="block mb-1 text-sm font-medium">Email</label>
           <input
             type="email"
-            {...register('email', {
-              required: 'Email is required',
-              pattern: {
-                value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
-                message: 'Invalid email address',
-              },
-            })}
+            {...register('email')}
             className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
           {errors.email && (
@@ -103,14 +84,7 @@ const Signup = () => {
           <label className="block mb-1 text-sm font-medium">Password</label>
           <input
             type="password"
-            {...register('password', {
-              required: 'Password is required',
-              pattern: {
-                value: /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/,
-                message:
-                  'Password must be at least 8 characters long and contain at least one letter and one number',
-              },
-            })}
+            {...register('password')}
             className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
           {errors.password && (
