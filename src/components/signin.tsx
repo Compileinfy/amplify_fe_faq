@@ -1,6 +1,13 @@
 'use client';
+
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { Amplify } from 'aws-amplify';
+import { signIn } from 'aws-amplify/auth';
+import outputs from '../../amplify_outputs.json';
+
+Amplify.configure(outputs);
 
 type FormData = {
   email: string;
@@ -8,19 +15,32 @@ type FormData = {
 };
 
 const Signin = () => {
-    const router = useRouter();
+  const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const {
     register,
     handleSubmit,
-    formState: { errors },
-  } = useForm<FormData>(
-    {
-         mode: "onChange",
-    }
-  );
+    formState: { errors, isValid },
+  } = useForm<FormData>({
+    mode: 'onChange',
+  });
 
-  const onSubmit = (data: FormData) => {
-    console.log(data);
+  const onSubmit = async (data: FormData) => {
+    try {
+      setIsSubmitting(true);
+      await signIn({ username: data.email, password: data.password });
+
+      // Simulate a short delay for loader effect
+      setTimeout(() => {
+        localStorage.setItem('loginTime', Date.now().toString());
+        router.push('/auth/Questions');
+      }, 1000);
+    } catch (error: any) {
+      console.error('Login failed:', error);
+      alert(error.message || 'Login failed. Please try again.');
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -72,9 +92,18 @@ const Signin = () => {
         <div className="flex justify-end pt-4">
           <button
             type="submit"
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            disabled={!isValid || isSubmitting}
+            className={`px-6 py-2 text-sm rounded-md text-white flex items-center justify-center ${
+              !isValid || isSubmitting
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-green-600 hover:bg-green-700'
+            }`}
           >
-            Login
+            {isSubmitting ? (
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            ) : (
+              'Login'
+            )}
           </button>
         </div>
       </div>
@@ -83,4 +112,3 @@ const Signin = () => {
 };
 
 export default Signin;
-
