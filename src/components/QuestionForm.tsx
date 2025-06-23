@@ -1,9 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useAddFaqMutation, useAddQuestionMutation } from "@/hooks/useAddFaqMutations";
+import { v4 as uuidv4 } from "uuid"; // for generating a unique formId
+import { useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect } from 'react';
+import { getCurrentUser } from 'aws-amplify/auth';
+import { useRouter } from 'next/navigation';
 
 type DisplayProps = {
    showForm: boolean;
+   onSubmitSuccess: () => void;
  };
 
 type Question = {
@@ -11,14 +17,31 @@ type Question = {
   options: string[];
 };
 
-export default function QuestionForm({ showForm }: DisplayProps) {
+export default function 
+QuestionForm({ showForm, onSubmitSuccess  }: DisplayProps) {
+  const [title, setTitle] = useState('');
   const [questions, setQuestions] = useState<Question[]>([
     { question: '', options: [] },
   ]);
+  const [userId, setUserId] = useState<string | null>(null);
 
-  if (!showForm) {
-     return null; 
-   }
+  const router = useRouter();
+
+  // Fetch signed-in user
+  useEffect(() => {
+    async function fetchUser() {
+      try {
+        const user = await getCurrentUser();
+        setUserId(user.username);
+      } catch {
+        setUserId(null);
+        router.push('/signin');
+      }
+    }
+
+    fetchUser();
+  }, [router]);
+
 
   const handleQuestionChange = (value: string, index: number) => {
     const newQuestions = [...questions];
@@ -43,33 +66,130 @@ export default function QuestionForm({ showForm }: DisplayProps) {
   };
 
   const deleteOption = (questionIndex: number, optionIndex: number) => {
-    const confirmDelete = window.confirm('Delete this option?');
-    if (!confirmDelete) return;
+    // const confirmDelete = window.confirm('Delete this option?');
+    // if (!confirmDelete) return;
 
     const newQuestions = [...questions];
     newQuestions[questionIndex].options.splice(optionIndex, 1);
     setQuestions(newQuestions);
   };
 
-  const handleSubmit = (index: number) => {
-    console.log(`Question ${index + 1}:`, questions[index]);
-  };
 
   const addQuestion = () => {
     setQuestions([...questions, { question: '', options: [] }]);
   };
 
   const deleteQuestion = (index: number) => {
-    const confirmDelete = window.confirm('Are you sure you want to delete this question?');
-    if (!confirmDelete) return;
+    // const confirmDelete = window.confirm('Are you sure you want to delete this question?');
+    // if (!confirmDelete) return;
 
     const newQuestions = [...questions];
     newQuestions.splice(index, 1);
     setQuestions(newQuestions);
   };
 
+const { mutateAsync: submitFaqForm } = useAddFaqMutation();
+const { mutateAsync: submitQuestion } = useAddQuestionMutation();
+
+
+const queryClient = useQueryClient();
+const handleSubmitAll = async () => {
+  if (!title.trim()) {
+    alert("Title is required");
+    return;
+  }
+
+  if (!userId) {
+    alert("User not signed in");
+    return;
+  }
+
+  if (questions.length === 0) {
+    alert("At least one question is required.");
+    return;
+  }
+
+  for (let i = 0; i < questions.length; i++) {
+    const q = questions[i];
+    const trimmedOptions = q.options.filter((opt) => opt?.trim());
+
+    if (!q.question.trim()) {
+      alert(`Question ${i + 1} is empty.`);
+      return;
+    }
+
+    if (trimmedOptions.length < 2) {
+      alert(`Question ${i + 1} must have at least 2 options.`);
+      return;
+    }
+
+    if (trimmedOptions.length > 5) {
+      alert(`Question ${i + 1} can have a maximum of 5 options.`);
+      return;
+    }
+  }
+
+  const formId = uuidv4(); // Generate unique ID
+
+  const input = {
+    input: {
+      formId,
+      title,
+      userId,
+    },
+  };
+
+  try {
+    const response = await submitFaqForm(input);
+    console.log("Form successfully created:", response);
+
+    for (const q of questions) {
+      const questionInput = {
+        input: {
+          formId,
+          questionId: uuidv4(),
+          question: q.question,
+          options: q.options.filter((opt) => opt?.trim()),
+          userId,
+        },
+      };
+
+      await submitQuestion(questionInput);
+    }
+
+    //Invalidate the FAQ list cache to trigger Sidebar refetch
+    queryClient.invalidateQueries({ queryKey: ["faqList"] });
+
+
+    alert("Form submitted successfully!");
+
+     onSubmitSuccess();
+  } catch (error) {
+    console.error("Failed to create form:", error);
+    alert("Error submitting form");
+  }
+};
+
+
+if (!showForm) {
+     return null; 
+   }
+
   return (
     <div className="space-y-6">
+      <div className="mb-6">
+      <label className="block text-lg font-semibold mb-2 text-gray-700">
+        FAQ Title
+      </label>
+      <input
+        type="text"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        placeholder="Enter form title here..."
+        className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring focus:ring-blue-300"
+      />
+      
+    </div>
       {questions.map((q, index) => (
         <div
           key={index}
@@ -126,12 +246,6 @@ export default function QuestionForm({ showForm }: DisplayProps) {
             </button>
           </div>
 
-          <button
-            onClick={() => handleSubmit(index)}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Submit Question {index + 1}
-          </button>
         </div>
       ))}
 
@@ -140,6 +254,12 @@ export default function QuestionForm({ showForm }: DisplayProps) {
         className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
       >
         + Add Question
+      </button>
+      <button
+        onClick={handleSubmitAll}
+        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+      >
+        {questions.length === 1 ? "Submit Question" : "Submit All Questions"}
       </button>
     </div>
   );

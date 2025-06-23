@@ -6,7 +6,7 @@ import ProfileDropdown from './ProfileDropdown';
 export default function Header() {
   const pathname = usePathname();
 
-  const hideProfile = ['/auth/login', '/auth/sign-up'].includes(pathname);
+  const hideProfile = ['/signin', '/signup'].includes(pathname);
 
   return (
     <header>

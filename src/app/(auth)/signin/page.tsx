@@ -1,9 +1,9 @@
 import Signin from '@/components/signin'
 import React from 'react'
 
-const login = () => {
+const signin = () => {
   return (
      <Signin/>
   )
 }
-export default login
+export default signin 

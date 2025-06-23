@@ -1,6 +1,14 @@
 'use client';
+
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { Amplify } from 'aws-amplify';
+import { getCurrentUser, signIn } from 'aws-amplify/auth';
+import outputs from '../../amplify_outputs.json';
+
+
+Amplify.configure(outputs);
 
 type FormData = {
   email: string;
@@ -8,19 +16,54 @@ type FormData = {
 };
 
 const Signin = () => {
-    const router = useRouter();
+  const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const {
     register,
     handleSubmit,
-    formState: { errors },
-  } = useForm<FormData>(
-    {
-         mode: "onChange",
-    }
-  );
+    formState: { errors, isValid },
+  } = useForm<FormData>({
+    mode: 'onChange',
+  });
 
-  const onSubmit = (data: FormData) => {
-    console.log(data);
+  useEffect(() => {
+    const checkUser = async () => {
+      try {
+        await getCurrentUser();
+        router.replace('/');
+      } catch {
+        // User not signed in, stay on this page
+      }
+    };
+    checkUser();
+  }, [router]);
+
+  const onSubmit = async (data: FormData) => {
+    try {
+      setIsSubmitting(true);
+      await signIn({ username: data.email, password: data.password });
+
+      const user = await getCurrentUser();
+      
+
+      // ✅ Store userId in cookie
+      document.cookie = `userId=${user.userId}; path=/; max-age=86400`; // 1 day expiry
+
+
+      setTimeout(() => {
+        localStorage.setItem('loginTime', Date.now().toString());
+        router.push('/');
+      }, 1000);
+    } catch (error: unknown) {
+      console.error('Login failed:', error);
+      if (error instanceof Error) {
+        alert(error.message || 'Login failed. Please try again.');
+      } else {
+        alert('Login failed. Please try again.');
+      }
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -37,7 +80,7 @@ const Signin = () => {
         </button>
         <button
           type="button"
-          onClick={() => router.push('/auth/sign-up')}
+          onClick={() => router.push('/signup')}
           className="w-1/2 py-2 border-l border-gray-300 text-gray-500 hover:bg-gray-100"
         >
           SignUp
@@ -72,9 +115,18 @@ const Signin = () => {
         <div className="flex justify-end pt-4">
           <button
             type="submit"
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            disabled={!isValid || isSubmitting}
+            className={`px-6 py-2 text-sm rounded-md text-white flex items-center justify-center ${
+              !isValid || isSubmitting
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-green-600 hover:bg-green-700'
+            }`}
           >
-            Login
+            {isSubmitting ? (
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            ) : (
+              'Login'
+            )}
           </button>
         </div>
       </div>
@@ -83,4 +135,3 @@ const Signin = () => {
 };
 
 export default Signin;
-
