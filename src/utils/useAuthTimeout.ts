@@ -19,7 +19,7 @@ export const useAuthTimeout = () => {
         await signOut();
         localStorage.removeItem('loginTime');
         alert('Session expired. Please log in again.');
-        router.push('/auth/sign-in');
+        router.push('/signin');
       }
     };
 

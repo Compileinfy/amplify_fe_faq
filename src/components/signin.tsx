@@ -2,10 +2,11 @@
 
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Amplify } from 'aws-amplify';
-import { signIn } from 'aws-amplify/auth';
+import { getCurrentUser, signIn } from 'aws-amplify/auth';
 import outputs from '../../amplify_outputs.json';
+
 
 Amplify.configure(outputs);
 
@@ -26,19 +27,41 @@ const Signin = () => {
     mode: 'onChange',
   });
 
+  useEffect(() => {
+    const checkUser = async () => {
+      try {
+        await getCurrentUser();
+        router.replace('/');
+      } catch {
+        // User not signed in, stay on this page
+      }
+    };
+    checkUser();
+  }, [router]);
+
   const onSubmit = async (data: FormData) => {
     try {
       setIsSubmitting(true);
       await signIn({ username: data.email, password: data.password });
 
-      // Simulate a short delay for loader effect
+      const user = await getCurrentUser();
+      
+
+      // ✅ Store userId in cookie
+      document.cookie = `userId=${user.userId}; path=/; max-age=86400`; // 1 day expiry
+
+
       setTimeout(() => {
         localStorage.setItem('loginTime', Date.now().toString());
-        router.push('/auth/Questions');
+        router.push('/');
       }, 1000);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Login failed:', error);
-      alert(error.message || 'Login failed. Please try again.');
+      if (error instanceof Error) {
+        alert(error.message || 'Login failed. Please try again.');
+      } else {
+        alert('Login failed. Please try again.');
+      }
       setIsSubmitting(false);
     }
   };
@@ -57,7 +80,7 @@ const Signin = () => {
         </button>
         <button
           type="button"
-          onClick={() => router.push('/auth/sign-up')}
+          onClick={() => router.push('/signup')}
           className="w-1/2 py-2 border-l border-gray-300 text-gray-500 hover:bg-gray-100"
         >
           SignUp

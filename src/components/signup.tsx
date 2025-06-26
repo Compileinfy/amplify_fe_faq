@@ -8,9 +8,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { signupSchema } from '@/schema/signupSchema';
 import type { FormData } from '@/schema/signupSchema';
 import { Amplify } from 'aws-amplify';
-import { signUp, confirmSignUp, signOut } from 'aws-amplify/auth';
+import { signUp, confirmSignUp, signOut, getCurrentUser } from 'aws-amplify/auth';
 import outputs from '../../amplify_outputs.json';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 // ----->Configure Amplify
 Amplify.configure(outputs);
@@ -29,6 +29,20 @@ const Signup = () => {
     resolver: zodResolver(signupSchema),
     mode: 'onChange',
   });
+
+  // Redirect to homepage if already signed in
+    useEffect(() => {
+      const checkUser = async () => {
+        try {
+          await getCurrentUser();
+          router.replace('/');
+        } catch {
+          // Not signed in, stay on sign-in page
+        }
+      };
+  
+      checkUser();
+    }, [router]);
 
   //----->Step 1: Handle SignUp
   const onSubmit = async (data: FormData) => {
@@ -56,8 +70,13 @@ const Signup = () => {
         alert('Signup complete. Please log in.');
         router.push('/auth/login');
       }
-    } catch (error: any) {
-      alert(error.message || 'Signup failed');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error) {
+      if (error instanceof Error) {
+        alert(error.message || 'Signup failed');
+      } else {
+        alert('Signup failed');
+      }
     }
   };
 
@@ -71,10 +90,15 @@ const Signup = () => {
 
       if (nextStep.signUpStep === 'DONE') {
         alert('Signup confirmed! Please login.');
-        router.push('/auth/login');
+        router.push('/signin');
       }
-    } catch (error: any) {
-      alert(error.message || 'OTP confirmation failed');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error) {
+      if (error instanceof Error) {
+        alert(error.message || 'OTP confirmation failed');
+      } else {
+        alert('OTP confirmation failed');
+      }
     }
   };
 
@@ -85,7 +109,7 @@ const Signup = () => {
           <div className="flex border-b mb-4">
             <button
               type="button"
-              onClick={() => router.push('/auth/login')}
+              onClick={() => router.push('/signin')}
               className="w-1/2 py-2 border-r border-gray-300 text-gray-500 hover:bg-gray-100"
             >
               SignIn
