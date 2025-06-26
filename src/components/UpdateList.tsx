@@ -3,22 +3,14 @@ import { v4 as uuidv4 } from "uuid";
 import { useUpdateQuestionMutation } from "@/hooks/useUpdateQuestionMutation";
 import { useDeleteFormMutation } from "@/hooks/useDeleteFormMutation";
 import { useAddQuestionMutation } from "@/hooks/useAddFaqMutations";
+import { Question, ULProps } from "@/types/types";
+import Button from "./commonComponents/Button";
 
-type Question = {
-  questionId: string;
-  question: string;
-  options: string[];
-  userId?: string;
-  formId?: string;
-};
-
-type Props = {
-  questions: Question[];
-  loading: boolean;
-  onBackToWelcome: () => void; // Add this prop
-};
-
-export default function UpdateList({ questions, loading, onBackToWelcome }: Props) {
+export default function UpdateList({
+  questions,
+  loading,
+  onBackToWelcome,
+}: ULProps) {
   console.log("questions: ", questions);
   const [editedQuestions, setEditedQuestions] = useState<Question[]>([]);
 
@@ -38,13 +30,19 @@ export default function UpdateList({ questions, loading, onBackToWelcome }: Prop
     );
   };
 
-  const handleOptionChange = (qIndex: number, optIndex: number, newText: string) => {
+  const handleOptionChange = (
+    qIndex: number,
+    optIndex: number,
+    newText: string
+  ) => {
     setEditedQuestions((prev) =>
       prev.map((q, i) =>
         i === qIndex
           ? {
               ...q,
-              options: q.options.map((opt, oi) => (oi === optIndex ? newText : opt)),
+              options: q.options.map((opt, oi) =>
+                oi === optIndex ? newText : opt
+              ),
             }
           : q
       )
@@ -106,9 +104,9 @@ export default function UpdateList({ questions, loading, onBackToWelcome }: Prop
         formId: formId,
         userId: userId,
       };
-      
+
       setEditedQuestions((prev) => [...prev, newQuestion]);
-      
+
       console.log("✅ New question added successfully");
     } catch (error) {
       console.error("❌ Error adding new question:", error);
@@ -141,7 +139,7 @@ export default function UpdateList({ questions, loading, onBackToWelcome }: Prop
 
       console.log("All questions updated successfully");
       alert("Form updated!");
-      
+
       // Navigate back to welcome page after successful update
       onBackToWelcome();
     } catch (err) {
@@ -167,7 +165,7 @@ export default function UpdateList({ questions, loading, onBackToWelcome }: Prop
       await deleteForm.mutateAsync(variables);
       alert("Form deleted successfully!");
       console.log("✅ Deleted Form ID:", formId);
-      
+
       // Navigate back to welcome page after successful deletion
       onBackToWelcome();
     } catch (err) {
@@ -184,19 +182,16 @@ export default function UpdateList({ questions, loading, onBackToWelcome }: Prop
     return (
       <div className="p-4 space-y-4">
         <p className="text-gray-500 text-sm">No questions found.</p>
-        <button
-          onClick={handleAddQuestion}
-          className="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
-        >
-          Add First Question
-        </button>
+        <Button onClick={handleAddQuestion}>Add First Question</Button>
       </div>
     );
   }
 
   return (
     <div className="p-4 space-y-6">
-      <h2 className="text-xl font-bold text-gray-800 mb-4">Edit Questions (Admin)</h2>
+      <h2 className="text-xl font-bold text-gray-800 mb-4">
+        Edit Questions (Admin)
+      </h2>
 
       {editedQuestions.map((q, qIndex) => (
         <div
@@ -211,12 +206,13 @@ export default function UpdateList({ questions, loading, onBackToWelcome }: Prop
               placeholder="Enter question text"
               className="w-full p-2 border border-gray-300 rounded text-gray-800 font-medium"
             />
-            <button
+            <Button
               onClick={() => handleDeleteQuestion(qIndex)}
-              className="text-red-500 text-sm hover:underline"
+              variant="danger"
+              className="text-sm bg-transparent px-0 py-0"
             >
               Delete Question
-            </button>
+            </Button>
           </div>
 
           <div className="space-y-2">
@@ -231,47 +227,38 @@ export default function UpdateList({ questions, loading, onBackToWelcome }: Prop
                   placeholder="Enter option"
                   className="w-full p-2 border border-gray-200 rounded text-sm text-gray-700"
                 />
-                <button
+                <Button
                   onClick={() => handleDeleteOption(qIndex, optIndex)}
-                  className="text-red-500 text-sm hover:underline"
+                  variant="danger"
+                  className="text-sm  bg-transparent px-0 py-0"
                 >
                   Delete
-                </button>
+                </Button>
               </div>
             ))}
           </div>
 
-          <button
+          <Button
             onClick={() => handleAddOption(qIndex)}
-            className="mt-2 px-3 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600"
+            variant="success"
+            className="text-xs mt-2"
           >
             + Add Option
-          </button>
+          </Button>
         </div>
       ))}
 
       <div className="pt-4">
-        <button
-          onClick={handleAddQuestion}
-          className="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
-        >
-          + Add Question
-        </button>
+        <Button onClick={handleAddQuestion}>+ Add Question</Button>
       </div>
 
-      <button
-        onClick={handleUpdateForm}
-        className="px-4 py-2 bg-indigo-600 text-white text-sm rounded hover:bg-indigo-700"
-      >
+      <Button onClick={handleUpdateForm} variant="primary">
         Update Form
-      </button>
+      </Button>
 
-      <button
-        onClick={handleDeleteForm}
-        className="px-4 py-2 bg-red-600 text-white text-sm rounded hover:bg-red-700"
-      >
+      <Button onClick={handleDeleteForm} variant="danger" className="text-white">
         Delete Form
-      </button>
+      </Button>
     </div>
   );
 }

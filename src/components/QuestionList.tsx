@@ -5,19 +5,10 @@ import { getCurrentUser } from "aws-amplify/auth";
 import { v4 as uuidv4 } from "uuid";
 import { useUpdateAns } from "@/hooks/useUpdateAns";
 import { UpdateAnswerModelMutationVariables } from "@/app/graphql/API";
+import { QLProps } from "@/types/types";
+import Button from "./commonComponents/Button";
 
-type Question = {
-  questionId: string;
-  question: string;
-  options: string[];
-};
-
-type Props = {
-  questions: Question[];
-  loading: boolean;
-};
-
-export default function QuestionList({ questions, loading }: Props) {
+export default function QuestionList({ questions, loading }: QLProps) {
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string[]>>({});
   const [userId, setUserId] = useState<string | null>(null);
   const [toggle, setToggle] = useState(false);
@@ -170,9 +161,10 @@ const handleSubmit = async () => {
                     <input
                       type="checkbox"
                       value={opt}
-                      checked={selectedOptions[q.questionId]?.includes(opt) || false}
+                      checked={
+                        selectedOptions[q.questionId]?.includes(opt) || false
+                      }
                       onChange={() => handleCheckboxChange(q.questionId, opt)}
-                  
                       className="text-blue-600"
                     />
                     <span>{opt}</span>
@@ -184,13 +176,13 @@ const handleSubmit = async () => {
         ))}
       </ul>
 
-      <button
-  onClick={toggle ?handleUpdate : handleSubmit}
-  className="mt-6 px-4 py-2 rounded text-white bg-blue-600 hover:bg-blue-700"
->
-  {toggle ? "Update Answers" : "Submit Answers"}
-</button>
-
+      <Button
+        onClick={toggle ? handleUpdate : handleSubmit}
+        variant="primary"
+        className="mt-6"
+      >
+        {toggle ? "Update Answers" : "Submit Answers"}
+      </Button>
     </div>
   );
 }

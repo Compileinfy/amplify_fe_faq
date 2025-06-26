@@ -1,13 +1,11 @@
 import { useEffect, useState } from "react";
 import { useListFaqQuery } from "@/hooks/useGetFaqQuery";
 import { useUserGroup } from "@/hooks/useUserGroup";
+import { SideBarProps } from "@/types/types";
+import Button from "./commonComponents/Button";
 
-type ButtonProps = {
-  onShowForm: () => void;
-  onSelectFormId: (formId: string) => void;
-};
 
-export default function Sidebar({ onShowForm, onSelectFormId }: ButtonProps) {
+export default function Sidebar({ onShowForm, onSelectFormId }: SideBarProps) {
   const { data: faqList, isLoading, isError } = useListFaqQuery();
   const { getUserGroup } = useUserGroup();
   const [userGroup, setUserGroup] = useState<string | null>(null);
@@ -22,13 +20,13 @@ export default function Sidebar({ onShowForm, onSelectFormId }: ButtonProps) {
       {/* Show CreateFAQ only if user is in ADMIN group */}
       {userGroup === "ADMIN" && (
         <div className="mb-6">
-          <button
+          <Button
             onClick={onShowForm}
-            type="button"
-            className="w-full px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded hover:bg-gray-300 transition"
+            variant="secondary"
+            className="w-full font-semibold"
           >
             CreateFAQ
-          </button>
+          </Button>
         </div>
       )}
 

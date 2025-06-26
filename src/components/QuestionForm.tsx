@@ -6,22 +6,17 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from 'react';
 import { getCurrentUser } from 'aws-amplify/auth';
 import { useRouter } from 'next/navigation';
+import { DisplayProps, Question } from "@/types/types";
+import Button from "./commonComponents/Button";
 
-type DisplayProps = {
-   showForm: boolean;
-   onSubmitSuccess: () => void;
- };
 
-type Question = {
-  question: string;
-  options: string[];
-};
+
 
 export default function 
 QuestionForm({ showForm, onSubmitSuccess  }: DisplayProps) {
   const [title, setTitle] = useState('');
   const [questions, setQuestions] = useState<Question[]>([
-    { question: '', options: [] },
+    { questionId: uuidv4(), question: '', options: [] },
   ]);
   const [userId, setUserId] = useState<string | null>(null);
 
@@ -76,7 +71,10 @@ QuestionForm({ showForm, onSubmitSuccess  }: DisplayProps) {
 
 
   const addQuestion = () => {
-    setQuestions([...questions, { question: '', options: [] }]);
+    setQuestions([
+      ...questions,
+      { questionId: uuidv4(), question: '', options: [] }
+    ]);
   };
 
   const deleteQuestion = (index: number) => {
@@ -178,18 +176,17 @@ if (!showForm) {
   return (
     <div className="space-y-6">
       <div className="mb-6">
-      <label className="block text-lg font-semibold mb-2 text-gray-700">
-        FAQ Title
-      </label>
-      <input
-        type="text"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        placeholder="Enter form title here..."
-        className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring focus:ring-blue-300"
-      />
-      
-    </div>
+        <label className="block text-lg font-semibold mb-2 text-gray-700">
+          FAQ Title
+        </label>
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Enter form title here..."
+          className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring focus:ring-blue-300"
+        />
+      </div>
       {questions.map((q, index) => (
         <div
           key={index}
@@ -216,10 +213,7 @@ if (!showForm) {
 
           <div>
             {q.options.map((option, optIndex) => (
-              <div
-                key={optIndex}
-                className="flex items-center mb-2 space-x-2"
-              >
+              <div key={optIndex} className="flex items-center mb-2 space-x-2">
                 <input
                   type="text"
                   value={option}
@@ -229,38 +223,33 @@ if (!showForm) {
                   className="px-2 py-1 border rounded-md w-full"
                   placeholder={`Option ${optIndex + 1}`}
                 />
-                <button
+                <Button
                   onClick={() => deleteOption(index, optIndex)}
-                  className="text-red-500 text-sm hover:underline"
+                  variant="danger"
+                  className="text-sm bg-transparent p-0"
                 >
                   Delete
-                </button>
+                </Button>
               </div>
             ))}
-            <button
+            <Button
               onClick={() => addOption(index)}
-              type="button"
-              className="text-blue-600 hover:underline text-sm mt-2"
+              variant="primary"
+              className="text-sm mt-2 p-0"
             >
               + Add Option
-            </button>
+            </Button>
           </div>
-
         </div>
       ))}
 
-      <button
-        onClick={addQuestion}
-        className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-      >
+      <Button onClick={addQuestion} variant="success">
         + Add Question
-      </button>
-      <button
-        onClick={handleSubmitAll}
-        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-      >
+      </Button>
+
+      <Button onClick={handleSubmitAll} variant="primary" className="mx-4">
         {questions.length === 1 ? "Submit Question" : "Submit All Questions"}
-      </button>
+      </Button>
     </div>
   );
 }
