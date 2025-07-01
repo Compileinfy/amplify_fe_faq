@@ -1,12 +1,16 @@
+'use client';
+
 import { useState, useRef, useEffect } from 'react';
 import { signOut } from 'aws-amplify/auth';
 import { useRouter } from 'next/navigation';
 import { Amplify } from 'aws-amplify';
 import outputs from '../../amplify_outputs.json';
 
-Amplify.configure(outputs)
+Amplify.configure(outputs);
+
 export default function ProfileDropdown() {
   const [open, setOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
@@ -22,11 +26,14 @@ export default function ProfileDropdown() {
 
   const handleLogout = async () => {
     try {
+      setLoggingOut(true);
       document.cookie = 'userId=; Max-Age=0; path=/';
       await signOut();
       router.push('/signin');
     } catch (err) {
       console.error('Error signing out:', err);
+    } finally {
+      setLoggingOut(false);
     }
   };
 
@@ -47,9 +54,32 @@ export default function ProfileDropdown() {
             <li className="px-4 py-2 hover:bg-gray-100">
               <button
                 onClick={handleLogout}
-                className="w-full text-left text-red-600 font-medium"
+                className="w-full text-left text-green-600 font-medium flex items-center justify-between"
+                disabled={loggingOut}
               >
                 Logout
+                {loggingOut && (
+                  <svg
+                    className="animate-spin h-4 w-4 ml-2 text-green-600"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8z"
+                    />
+                  </svg>
+                )}
               </button>
             </li>
           </ul>

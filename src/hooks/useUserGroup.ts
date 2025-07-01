@@ -1,3 +1,6 @@
+import { listUserModels } from '@/app/graphql/queries';
+import { client_with_token } from '@/utils/amplifyGenerateClient';
+import { useQuery } from '@tanstack/react-query';
 import { fetchAuthSession } from 'aws-amplify/auth';
 import { useCallback } from 'react';
 
@@ -29,8 +32,17 @@ export const useUserGroup = () => {
 };
 
 
-// import { useUserGroup } from '@/hooks/useUserGroup'; 
-// const { getUserGroup } = useUserGroup();
-// const group = await getUserGroup(); 
-//       console.log("group: ", group);
+export const useListUsersQuery = ({ enabled = true } = {}) => {
+  return useQuery({
+    queryKey: ["userList"],
+    enabled,
+    queryFn: async () => {
+      const res = await client_with_token.graphql({
+        query: listUserModels,
+      });
+
+      return res?.data?.listUserModels?.items || [];
+    },
+  });
+};
       

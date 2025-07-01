@@ -159,12 +159,11 @@ const handleSubmit = async () => {
   return (
     <div className="p-4">
       <h2 className="text-lg font-semibold mb-4">Questions</h2>
-      <ul className="space-y-4">
-        {questions.map((q,i) => (
+      <ul className="space-y-2 max-h-64 overflow-y-auto">
+
+        {questions.map((q) => (
           <li key={q.questionId} className="bg-gray-100 p-3 rounded shadow-sm">
-            <p className="font-medium mb-2">
-               <b>{i + 1}. {q.question}</b>
-          </p>
+            <p className="font-medium mb-2">{q.question}</p>
             {q.options?.length > 0 && (
               <div className="space-y-1 text-sm text-gray-700">
                 {q.options.map((opt, index) => (
@@ -196,3 +195,4 @@ const handleSubmit = async () => {
     </div>
   );
 }
+

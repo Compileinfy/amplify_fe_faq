@@ -49,15 +49,27 @@ QuestionForm({ showForm, onSubmitSuccess  }: DisplayProps) {
     setQuestions(newQuestions);
   };
 
-  const handleOptionChange = (
-    value: string,
-    questionIndex: number,
-    optionIndex: number
-  ) => {
-    const newQuestions = [...questions];
-    newQuestions[questionIndex].options[optionIndex] = value;
-    setQuestions(newQuestions);
-  };
+ const handleOptionChange = (
+  value: string,
+  questionIndex: number,
+  optionIndex: number
+) => {
+  const newQuestions = [...questions];
+  const trimmedValue = value.trim();
+
+  // Check if the option already exists (case-insensitive match, ignoring the current index)
+  const isDuplicate = newQuestions[questionIndex].options.some((opt, idx) => 
+    idx !== optionIndex && opt.trim().toLowerCase() === trimmedValue.toLowerCase()
+  );
+
+  if (isDuplicate) {
+    alert(`Option "${value}" is already added to Question ${questionIndex + 1}`);
+    return;
+  }
+
+  newQuestions[questionIndex].options[optionIndex] = value;
+  setQuestions(newQuestions);
+};
 
   const addOption = (questionIndex: number) => {
     const newQuestions = [...questions];

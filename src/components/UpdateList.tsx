@@ -1,9 +1,12 @@
-import { useState, useEffect } from "react";
+'use client';
+
+import { useEffect, useState } from "react";
+import { useSearchParams } from 'next/navigation';
 import { v4 as uuidv4 } from "uuid";
 import { useUpdateQuestionMutation } from "@/hooks/useUpdateQuestionMutation";
 import { useDeleteFormMutation } from "@/hooks/useDeleteFormMutation";
 import { useAddQuestionMutation } from "@/hooks/useAddFaqMutations";
-import { useDeleteQuestionMutation } from "@/hooks/useDeleteFormMutation"; // Assuming this deletes a single question
+import { useDeleteQuestionMutation } from "@/hooks/useDeleteFormMutation";
 
 type Question = {
   questionId: string;
@@ -29,8 +32,12 @@ export default function UpdateList({ questions, loading, onBackToWelcome }: Prop
   const deleteForm = useDeleteFormMutation();
   const deleteQuestion = useDeleteQuestionMutation();
 
+  const searchParams = useSearchParams();
+  const formIdFromUrl = searchParams.get("formId") || undefined;
+  const userIdFromUrl = searchParams.get("userId") || undefined;
+
   useEffect(() => {
-    if (questions?.length) {
+    if (questions?.length > 0) {
       const cloned = questions.map((q) => ({
         ...q,
         options: [...q.options],
@@ -38,8 +45,11 @@ export default function UpdateList({ questions, loading, onBackToWelcome }: Prop
       setEditedQuestions(cloned);
       setFormId(questions[0].formId);
       setUserId(questions[0].userId);
+    } else {
+      setFormId(formIdFromUrl);
+      setUserId(userIdFromUrl);
     }
-  }, [questions]);
+  }, [questions, formIdFromUrl, userIdFromUrl]);
 
   const handleQuestionChange = (index: number, newText: string) => {
     setEditedQuestions((prev) =>
@@ -49,14 +59,24 @@ export default function UpdateList({ questions, loading, onBackToWelcome }: Prop
 
   const handleOptionChange = (qIndex: number, optIndex: number, newText: string) => {
     setEditedQuestions((prev) =>
-      prev.map((q, i) =>
-        i === qIndex
-          ? {
-              ...q,
-              options: q.options.map((opt, oi) => (oi === optIndex ? newText : opt)),
-            }
-          : q
-      )
+      prev.map((q, i) => {
+        if (i !== qIndex) return q;
+
+        const trimmedNew = newText.trim().toLowerCase();
+        const isDuplicate = q.options.some((opt, oi) =>
+          oi !== optIndex && opt.trim().toLowerCase() === trimmedNew
+        );
+
+        if (isDuplicate) {
+          alert(`Option "${newText}" is already used in Question ${qIndex + 1}`);
+          return q;
+        }
+
+        return {
+          ...q,
+          options: q.options.map((opt, oi) => (oi === optIndex ? newText : opt)),
+        };
+      })
     );
   };
 
@@ -71,9 +91,15 @@ export default function UpdateList({ questions, loading, onBackToWelcome }: Prop
   };
 
   const handleDeleteQuestion = async (qIndex: number) => {
-    const questionToDelete = editedQuestions[qIndex];
+    if (editedQuestions.length <= 1) {
+      alert("You cannot delete the last remaining question. A form must have at least one question.");
+      return;
+    }
+
     const confirmed = window.confirm("Are you sure you want to delete this question?");
     if (!confirmed) return;
+
+    const questionToDelete = editedQuestions[qIndex];
 
     try {
       if (questionToDelete?.questionId) {
@@ -83,12 +109,7 @@ export default function UpdateList({ questions, loading, onBackToWelcome }: Prop
         });
       }
 
-      setEditedQuestions((prev) => {
-        const updated = prev.filter((_, i) => i !== qIndex);
-        return updated;
-      });
-
-      console.log("✅ Question deleted");
+      setEditedQuestions((prev) => prev.filter((_, i) => i !== qIndex));
     } catch (error) {
       console.error("❌ Failed to delete question:", error);
       alert("Failed to delete question.");
@@ -111,7 +132,6 @@ export default function UpdateList({ questions, loading, onBackToWelcome }: Prop
       }
 
       const newQuestionId = uuidv4();
-
       const questionInput = {
         input: {
           formId,
@@ -149,7 +169,6 @@ export default function UpdateList({ questions, loading, onBackToWelcome }: Prop
           formId: question.formId,
           userId: question.userId,
         };
-
         return updateQuestion.mutateAsync({ input, condition: null });
       });
 
@@ -186,23 +205,10 @@ export default function UpdateList({ questions, loading, onBackToWelcome }: Prop
     return <p className="p-4 text-sm text-gray-600">Loading questions...</p>;
   }
 
-  if (!editedQuestions.length) {
-    return (
-      <div className="p-4 space-y-4">
-        <p className="text-gray-500 text-sm">No questions found.</p>
-        <button
-          onClick={handleAddQuestion}
-          className="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
-        >
-          Add First Question
-        </button>
-      </div>
-    );
-  }
-
   return (
     <div className="p-4 space-y-6">
-      <h2 className="text-xl font-bold text-gray-800 mb-4">Edit Questions (Admin)</h2>
+      <span className="text-red-600 font-bold text-lg">Hello Admin</span>
+      <h2 className="text-xl font-bold text-gray-800 mb-4">Edit Questions</h2>
 
       {editedQuestions.map((q, qIndex) => (
         <div
@@ -216,7 +222,10 @@ export default function UpdateList({ questions, loading, onBackToWelcome }: Prop
               </h3>
               <button
                 onClick={() => handleDeleteQuestion(qIndex)}
-                className="text-red-500 text-sm hover:underline"
+                disabled={editedQuestions.length <= 1}
+                className={`text-red-500 text-sm hover:underline ${
+                  editedQuestions.length <= 1 ? "opacity-50 cursor-not-allowed" : ""
+                }`}
               >
                 Delete Question
               </button>

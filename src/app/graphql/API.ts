@@ -600,6 +600,7 @@ export type ListFormModelsQuery = {
   listFormModels?:  {
     __typename: "ModelFormModelConnection",
     items:  Array< {
+      id: string | undefined;
       __typename: "formModel",
       createdAt?: string | null,
       formId: string,

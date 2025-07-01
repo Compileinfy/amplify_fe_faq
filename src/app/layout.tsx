@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Header from "@/components/Header";
 import ClientProvider from "@/providers/ClientProvider"; // import new wrapper
+import { Toaster } from "react-hot-toast";
 
 export const metadata: Metadata = {
   title: "HeroFAQ",
@@ -19,6 +20,7 @@ export default function RootLayout({
         <ClientProvider>
           <Header />
           {children}
+        
         </ClientProvider>
       </body>
     </html>
