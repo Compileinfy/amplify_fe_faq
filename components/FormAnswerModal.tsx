@@ -4,14 +4,11 @@ import { useEffect, useState } from "react";
 import { listQuestionModelByFormId, listAnswerModels } from "@/app/graphql/queries";
 import { client_with_token } from "@/utils/amplifyGenerateClient";
 import { questionModel, answerModel } from "@/app/graphql/API";
+import { FAMProps } from "@/types/types";
+import Button from "./commonComponents/Button";
 
-type Props = {
-  formId: string;
-  userId: string;
-  onClose: () => void;
-};
 
-export default function FormAnswerModal({ formId, userId, onClose }: Props) {
+export default function FormAnswerModal({ formId, userId, onClose }: FAMProps) {
   const [questions, setQuestions] = useState<questionModel[]>([]);
   const [userAnswers, setUserAnswers] = useState<answerModel[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,12 +51,14 @@ export default function FormAnswerModal({ formId, userId, onClose }: Props) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-lg p-6 max-w-2xl w-full relative max-h-[90vh] overflow-y-auto">
-        <button
+        <Button
           onClick={onClose}
-          className="absolute top-2 right-3 text-gray-500 hover:text-black"
+          variant="secondary"
+          className="absolute top-2 right-3 text-lg px-2 py-1"
         >
           ✕
-        </button>
+        </Button>
+
         <h2 className="text-xl font-bold mb-4">Form Questions & Answers</h2>
 
         {loading ? (

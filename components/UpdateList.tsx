@@ -7,22 +7,11 @@ import { useUpdateQuestionMutation } from "@/hooks/useUpdateQuestionMutation";
 import { useDeleteFormMutation } from "@/hooks/useDeleteFormMutation";
 import { useAddQuestionMutation } from "@/hooks/useAddFaqMutations";
 import { useDeleteQuestionMutation } from "@/hooks/useDeleteFormMutation";
+import { Question, ULProps } from "@/types/types";
+import Button from "./commonComponents/Button";
 
-type Question = {
-  questionId: string;
-  question: string;
-  options: string[];
-  userId?: string;
-  formId?: string;
-};
 
-type Props = {
-  questions: Question[];
-  loading: boolean;
-  onBackToWelcome: () => void;
-};
-
-export default function UpdateList({ questions, loading, onBackToWelcome }: Props) {
+export default function UpdateList({ questions, loading, onBackToWelcome }: ULProps) {
   const [editedQuestions, setEditedQuestions] = useState<Question[]>([]);
   const [formId, setFormId] = useState<string | undefined>();
   const [userId, setUserId] = useState<string | undefined>();
@@ -209,7 +198,6 @@ export default function UpdateList({ questions, loading, onBackToWelcome }: Prop
     <div className="p-4 space-y-6">
       <span className="text-red-600 font-bold text-lg">Hello Admin</span>
       <h2 className="text-xl font-bold text-gray-800 mb-4">Edit Questions</h2>
-
       {editedQuestions.map((q, qIndex) => (
         <div
           key={q.questionId}
@@ -220,15 +208,19 @@ export default function UpdateList({ questions, loading, onBackToWelcome }: Prop
               <h3 className="text-md font-semibold text-gray-700">
                 Question {qIndex + 1}
               </h3>
-              <button
+              <Button
                 onClick={() => handleDeleteQuestion(qIndex)}
                 disabled={editedQuestions.length <= 1}
-                className={`text-red-500 text-sm hover:underline ${
-                  editedQuestions.length <= 1 ? "opacity-50 cursor-not-allowed" : ""
+                variant="danger"
+                type="button"
+                className={`text-sm hover:underline bg-transparent px-0 py-0 text-red-500 ${
+                  editedQuestions.length <= 1
+                    ? "opacity-50 cursor-not-allowed"
+                    : ""
                 }`}
               >
                 Delete Question
-              </button>
+              </Button>
             </div>
             <input
               type="text"
@@ -245,23 +237,28 @@ export default function UpdateList({ questions, loading, onBackToWelcome }: Prop
                 <input
                   type="text"
                   value={opt}
-                  onChange={(e) => handleOptionChange(qIndex, optIndex, e.target.value)}
+                  onChange={(e) =>
+                    handleOptionChange(qIndex, optIndex, e.target.value)
+                  }
                   placeholder="Enter option"
                   className="w-full p-2 border border-gray-200 rounded text-sm text-gray-700"
                 />
-                <button
+                <Button
                   onClick={() => handleDeleteOption(qIndex, optIndex)}
-                  className="text-red-500 text-sm hover:underline"
+                  variant="danger"
+                  type="button"
+                  className="text-red-500 text-sm hover:underline bg-transparent px-0 py-0"
                 >
                   Delete
-                </button>
+                </Button>
               </div>
             ))}
           </div>
 
-          <button
+          <Button
             onClick={() => handleAddOption(qIndex)}
             disabled={q.options.length >= 5}
+            type="button"
             className={`mt-2 px-3 py-1 text-xs rounded ${
               q.options.length >= 5
                 ? "bg-gray-400 cursor-not-allowed text-white"
@@ -269,32 +266,33 @@ export default function UpdateList({ questions, loading, onBackToWelcome }: Prop
             }`}
           >
             + Add Option
-          </button>
+          </Button>
         </div>
       ))}
-
       <div className="pt-4">
-        <button
+        <Button
           onClick={handleAddQuestion}
+          type="button"
           className="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
         >
           + Add Question
-        </button>
+        </Button>
       </div>
-
-      <button
+      <Button
         onClick={handleUpdateForm}
+        type="button"
         className="px-4 py-2 bg-indigo-600 text-white text-sm rounded hover:bg-indigo-700"
       >
         Update Form
-      </button>
+      </Button>
       &nbsp;&nbsp;&nbsp;
-      <button
+      <Button
         onClick={handleDeleteForm}
+        type="button"
         className="px-4 py-2 bg-red-600 text-white text-sm rounded hover:bg-red-700"
       >
         Delete Form
-      </button>
+      </Button>
     </div>
   );
 }

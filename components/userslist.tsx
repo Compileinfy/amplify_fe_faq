@@ -7,21 +7,13 @@ import {
   listQuestionModelByFormId,
 } from "@/app/graphql/queries";
 import { client_with_token } from "@/utils/amplifyGenerateClient";
-import { answerModel, questionModel } from "@/app/graphql/API";
+import { answerModel} from "@/app/graphql/API";
+import { ULFormData, UserLProps } from "@/types/types";
+import Button from "./commonComponents/Button";
 
-type Props = {
-  userId: string;
-  onBackToDashboard: () => void;
-};
-
-type FormData = {
-  title: string;
-  questions: questionModel[];
-};
-
-export default function UserList({ userId, onBackToDashboard }: Props) {
+export default function UserList({ userId, onBackToDashboard }: UserLProps) {
   const [answers, setAnswers] = useState<answerModel[]>([]);
-  const [formDataMap, setFormDataMap] = useState<Record<string, FormData>>({});
+  const [formDataMap, setFormDataMap] = useState<Record<string, ULFormData>>({});
   const [expandedForms, setExpandedForms] = useState<Set<string>>(new Set());
   const [userAnswersLoading, setUserAnswersLoading] = useState(false);
 
@@ -40,7 +32,7 @@ export default function UserList({ userId, onBackToDashboard }: Props) {
         const items: answerModel[] = res.data?.listAnswerModels?.items || [];
         setAnswers(items);
 
-        const formMap: Record<string, FormData> = {};
+        const formMap: Record<string, ULFormData> = {};
         const seenFormIds = new Set<string>();
 
         for (const ans of items) {
@@ -84,7 +76,11 @@ export default function UserList({ userId, onBackToDashboard }: Props) {
   const toggleForm = (formId: string) => {
     setExpandedForms((prev) => {
       const updated = new Set(prev);
-      updated.has(formId) ? updated.delete(formId) : updated.add(formId);
+      if (updated.has(formId)) {
+        updated.delete(formId);
+      } else {
+        updated.add(formId);
+      }
       return updated;
     });
   };
@@ -100,19 +96,20 @@ export default function UserList({ userId, onBackToDashboard }: Props) {
     <div>
       <h2 className="text-xl font-semibold mb-4">Forms Answered by User</h2>
 
-      <button
+      <Button
         onClick={onBackToDashboard}
-        className="mb-4 px-4 py-2 text-sm bg-gray-200 rounded hover:bg-gray-300"
+        type="button"
+        className="mb-4 px-4 py-2 text-sm bg-gray-600 rounded hover:bg-gray-500"
       >
         ← Back to Dashboard
-      </button>
+      </Button>
 
       {userAnswersLoading ? (
         <div className="flex justify-center items-center h-32 text-sm text-gray-500">
           Loading Forms...
         </div>
       ) : formIds.length === 0 ? (
-        <p>This user hasn't answered any forms.</p>
+        <p>This user has answered any forms.</p>
       ) : (
         <ul className="space-y-4">
           {formIds.map((formId, index) => {

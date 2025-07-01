@@ -3,17 +3,9 @@
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Amplify } from 'aws-amplify';
 import { getCurrentUser, signIn } from 'aws-amplify/auth';
-import outputs from '../../amplify_outputs.json';
+import { FormData } from '@/types/types';
 
-
-Amplify.configure(outputs);
-
-type FormData = {
-  email: string;
-  password: string;
-};
 
 const Signin = () => {
   const router = useRouter();

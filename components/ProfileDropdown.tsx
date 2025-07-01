@@ -3,10 +3,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { signOut } from 'aws-amplify/auth';
 import { useRouter } from 'next/navigation';
-import { Amplify } from 'aws-amplify';
-import outputs from '../../amplify_outputs.json';
+import Button from './commonComponents/Button';
 
-Amplify.configure(outputs);
 
 export default function ProfileDropdown() {
   const [open, setOpen] = useState(false);
@@ -39,18 +37,23 @@ export default function ProfileDropdown() {
 
   return (
     <div className="relative" ref={dropdownRef}>
-      <button
+      <Button
         onClick={() => setOpen(!open)}
-        className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center focus:outline-none"
+        variant="secondary"
+        className="w-10 h-10 rounded-full p-0 flex items-center justify-center"
       >
         <span className="text-sm font-bold">U</span>
-      </button>
+      </Button>
 
       {open && (
         <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
           <ul className="text-sm text-gray-700">
-            <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer">Profile</li>
-            <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer">Settings</li>
+            <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer">
+              Profile
+            </li>
+            <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer">
+              Settings
+            </li>
             <li className="px-4 py-2 hover:bg-gray-100">
               <button
                 onClick={handleLogout}

@@ -7,13 +7,12 @@ import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { signupSchema } from '@/schema/signupSchema';
 import type { FormData } from '@/schema/signupSchema';
-import { Amplify } from 'aws-amplify';
 import { signUp, confirmSignUp, signOut, getCurrentUser } from 'aws-amplify/auth';
-import outputs from '../../amplify_outputs.json';
+
 import { useEffect, useState } from 'react';
 
 // ----->Configure Amplify
-Amplify.configure(outputs);
+
 
 const Signup = () => {
   const router = useRouter();
@@ -70,7 +69,7 @@ const Signup = () => {
         alert('Signup complete. Please log in.');
         router.push('/auth/login');
       }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     } catch (error) {
       if (error instanceof Error) {
         alert(error.message || 'Signup failed');
@@ -92,7 +91,6 @@ const Signup = () => {
         alert('Signup confirmed! Please login.');
         router.push('/signin');
       }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error) {
       if (error instanceof Error) {
         alert(error.message || 'OTP confirmation failed');

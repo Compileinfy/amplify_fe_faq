@@ -19,7 +19,7 @@ export default function Home() {
 
   useEffect(() => {
     getUserGroup().then(setUserGroup);
-  }, []);
+  }, [getUserGroup]);
 
   const handleShowForm = () => {
     setShowForm(true);

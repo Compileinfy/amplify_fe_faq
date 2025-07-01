@@ -3,12 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useListFaqQuery } from '@/hooks/useGetFaqQuery';
 import { useUserGroup, useListUsersQuery } from '@/hooks/useUserGroup';
-
-type ButtonProps = {
-  onShowForm: () => void;
-  onSelectFormId: (formId: string) => void;
-  onViewUserAnswers: (userId: string) => void;
-};
+import { ButtonProps } from '@/types/types';
+import Button from './commonComponents/Button';
 
 export default function Sidebar({
   onShowForm,
@@ -31,9 +27,9 @@ export default function Sidebar({
 
   useEffect(() => {
     getUserGroup().then(setUserGroup);
-  }, []);
+  }, [getUserGroup]);
 
-  const filteredUsers = users.filter((user: any) =>
+  const filteredUsers = users.filter((user) =>
     `${user.firstname} ${user.lastname} ${user.email}`
       .toLowerCase()
       .includes(searchTerm.toLowerCase())
@@ -53,22 +49,27 @@ export default function Sidebar({
       {/* Content area */}
       <div className="flex-grow overflow-y-auto">
         {/* Create FAQ button */}
-        {userGroup === 'ADMIN' && !showUsers && (
+        {userGroup === "ADMIN" && !showUsers && (
           <div className="mb-6">
-            <button
+            <Button
               onClick={onShowForm}
-              className="w-full px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded hover:bg-gray-300 transition"
+              variant="secondary"
+              className="w-full px-4 py-2 font-semibold transition"
             >
               Create FAQ
-            </button>
+            </Button>
           </div>
         )}
 
         {/* FAQ List */}
         {!showUsers && (
           <ul className="flex flex-col space-y-2">
-            {isLoading && <li className="text-sm text-gray-500">Loading FAQs...</li>}
-            {isError && <li className="text-sm text-red-500">Error loading FAQs</li>}
+            {isLoading && (
+              <li className="text-sm text-gray-500">Loading FAQs...</li>
+            )}
+            {isError && (
+              <li className="text-sm text-red-500">Error loading FAQs</li>
+            )}
             {faqList?.map((faq) => (
               <li
                 key={faq.formId}
@@ -92,15 +93,21 @@ export default function Sidebar({
               className="w-full p-2 border border-gray-300 rounded mb-3 text-sm"
             />
 
-            {userLoading && <p className="text-sm text-gray-500">Loading users...</p>}
+            {userLoading && (
+              <p className="text-sm text-gray-500">Loading users...</p>
+            )}
 
             <ul className="space-y-2">
-              {filteredUsers.map((user: any) => (
+              {filteredUsers.map((user) => (
                 <li
                   key={user.userId}
                   onClick={() => handleUserClick(user.userId)}
                   className={`text-sm px-3 py-2 rounded cursor-pointer flex justify-between items-center
-                    ${activeUserId === user.userId ? 'border border-blue-500 bg-blue-50 font-bold' : 'bg-gray-100 text-gray-700'}
+                    ${
+                      activeUserId === user.userId
+                        ? "border border-blue-500 bg-blue-50 font-bold"
+                        : "bg-gray-100 text-gray-700"
+                    }
                     hover:bg-gray-200 transition`}
                 >
                   <div>
@@ -141,14 +148,14 @@ export default function Sidebar({
       </div>
 
       {/* Sticky toggle button */}
-      {userGroup === 'ADMIN' && (
+      {userGroup === "ADMIN" && (
         <div className="sticky bottom-4 bg-white pt-4 border-t">
-          <button
+          <Button
             onClick={() => setShowUsers((prev) => !prev)}
             className="w-full px-4 py-2 bg-blue-100 text-blue-800 font-semibold rounded hover:bg-blue-200 transition"
           >
-            {showUsers ? 'View FAQs' : 'View Users'}
-          </button>
+            {showUsers ? "View FAQs" : "View Users"}
+          </Button>
         </div>
       )}
     </aside>

@@ -1,13 +1,6 @@
 // components/Button.tsx
+import { MButtonProps } from "@/types/types";
 import React from "react";
-
-type ButtonProps = {
-  onClick: () => void;
-  children: React.ReactNode;
-  variant?: "primary" | "secondary" | "danger" | "success";
-  className?: string;
-  type?: "button" | "submit" | "reset";
-};
 
 const baseClasses =
   "px-4 py-2 text-sm rounded focus:outline-none transition-colors";
@@ -25,7 +18,7 @@ export default function Button({
   variant = "primary",
   className = "",
   type = "button",
-}: ButtonProps) {
+}: MButtonProps) {
   return (
     <button
       type={type}
