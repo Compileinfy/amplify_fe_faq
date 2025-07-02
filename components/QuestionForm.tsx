@@ -249,7 +249,7 @@ if (!showForm) {
               onClick={() => addOption(index)}
               type="button"
               variant="primary"
-              className="text-blue-600 hover:underline text-sm mt-2 bg-transparent px-0 py-0"
+              className="text-blue-600 text-sm  px-0 py-0"
             >
               + Add Option
             </Button>

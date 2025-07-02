@@ -1,21 +1,34 @@
-import { useEffect, useState } from "react";
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
 import { useAddAnsMutation } from "@/hooks/useAddAnsMutation";
 import { useAllAnswers } from "@/hooks/useAnswerListQuery";
 import { getCurrentUser } from "aws-amplify/auth";
 import { v4 as uuidv4 } from "uuid";
 import { useUpdateAns } from "@/hooks/useUpdateAns";
 import { UpdateAnswerModelMutationVariables } from "@/app/graphql/API";
-import { QLProps } from "@/types/types";
-import Button from "./commonComponents/Button";
 
+type Question = {
+  questionId: string;
+  question: string;
+  options: string[];
+  formId: string;
+};
 
-export default function QuestionList({ questions, loading }: QLProps) {
-  const [selectedOptions, setSelectedOptions] = useState<Record<string, string[]>>({});
+type Props = {
+  questions: Question[];
+  loading: boolean;
+};
+
+export default function QuestionList({ questions, loading }: Props) {
+  const [selectedOptions, setSelectedOptions] = useState<
+    Record<string, string[]>
+  >({});
   const [userId, setUserId] = useState<string | null>(null);
   const [toggle, setToggle] = useState(false);
-  
+  const [hasUserInteracted, setHasUserInteracted] = useState(false);
 
-    useEffect(() => {
+  useEffect(() => {
     const fetchUser = async () => {
       const user = await getCurrentUser();
       setUserId(user.userId);
@@ -24,169 +37,189 @@ export default function QuestionList({ questions, loading }: QLProps) {
   }, []);
 
   const handleCheckboxChange = (questionId: string, option: string) => {
+    console.log("Checkbox clicked:", questionId, option);
+    setHasUserInteracted(true); // Mark that user has made changes
+
     setSelectedOptions((prev) => {
-      const currentSelections = prev[questionId] || [];
-      const isSelected = currentSelections.includes(option);
+      console.log("Previous selected options:", prev);
+      const current = prev[questionId] || [];
+      const updated = current.includes(option)
+        ? current.filter((o) => o !== option)
+        : [...current, option];
 
-      const updatedSelections = isSelected
-        ? currentSelections.filter((o) => o !== option) // Remove if already selected
-        : [...currentSelections, option]; // Add if not selected
-
-      return {
-        ...prev,
-        [questionId]: updatedSelections,
-      };
+      console.log("Updated options for question:", questionId, updated);
+      const newState = { ...prev, [questionId]: updated };
+      console.log("New complete state:", newState);
+      return newState;
     });
   };
 
-  const results = useAllAnswers(userId ?? '', questions);
+  const results = useAllAnswers(userId ?? "", questions);
 
-// Log once when data is fetched
-const resultsDataString = JSON.stringify(results.map((res) => res.data));
+  // Extract the complex expression to a separate variable
+  const resultsData = useMemo(() => results.map((r) => r.data), [results]);
 
-useEffect(() => {
-  const latestSelections: Record<string, string[]> = {};
+  const resultsDataStr = useMemo(
+    () => JSON.stringify(resultsData),
+    [resultsData]
+  );
 
-  results.forEach((res) => {
-    if (res.data && res.data.length > 0) {
-      const latest = res.data[res.data.length - 1];
-      if (latest?.questionId && latest.selectedOptions) {
-        console.log("updated")
-        setToggle(true);
-        latestSelections[latest.questionId] = latest.selectedOptions.filter(
-          (opt): opt is string => opt !== null
-        );
-      }
+  useEffect(() => {
+    // Only update from API if user hasn't interacted yet
+    if (!hasUserInteracted) {
+      const latestSelections: Record<string, string[]> = {};
+
+      results.forEach((res) => {
+        if (res.data && res.data.length > 0) {
+          const latest = res.data[res.data.length - 1];
+          if (latest?.questionId && latest.selectedOptions) {
+            setToggle(true);
+            latestSelections[latest.questionId] = latest.selectedOptions.filter(
+              (opt): opt is string => opt !== null
+            );
+          }
+        }
+      });
+
+      setSelectedOptions((prev) => {
+        const prevStr = JSON.stringify(prev);
+        const latestStr = JSON.stringify(latestSelections);
+        return prevStr === latestStr ? prev : latestSelections;
+      });
     }
-  });
+  }, [resultsDataStr, hasUserInteracted, results]);
 
-  setSelectedOptions((prev) => {
-    const prevStr = JSON.stringify(prev);
-    const latestStr = JSON.stringify(latestSelections);
-    return prevStr === latestStr ? prev : latestSelections;
-  });
-}, [results, resultsDataString]);
+  const updateAnswer = useUpdateAns();
+  const addAnswer = useAddAnsMutation();
 
-const updateAnswer = useUpdateAns();
-const handleUpdate = async () => {
-  if (!userId) {
-    alert("User not found. Please log in.");
-    return;
-  }
+  const handleSubmit = async () => {
+    if (!userId) {
+      alert("User not found.");
+      return;
+    }
 
-  try {
-    const updatePromises = results.map((res) => {
-      if (res.data && res.data.length > 0) {
-        const latest = res.data[res.data.length - 1];
+    try {
+      const entries = Object.entries(selectedOptions);
 
-        if (!latest || !latest.answerId || !latest.questionId) return null;
+      const promises = entries.map(([questionId, selectedOptionsArray]) => {
+        const question = questions.find((q) => q.questionId === questionId);
+        const formId = question?.formId;
 
-        const input: UpdateAnswerModelMutationVariables = {
+        const input = {
           input: {
-            answerId: latest.answerId,
-            questionId: latest.questionId,
-            selectedOptions: selectedOptions[latest.questionId] || [],
+            answerId: uuidv4(),
+            questionId,
+            selectedOptions: selectedOptionsArray,
             userId,
+            formId: formId ?? "",
           },
         };
-        console.log("Updating answer:", input);
-        return updateAnswer.mutateAsync(input);
-      }
 
-      return null;
-    });
+        return addAnswer.mutateAsync(input);
+      });
 
-    await Promise.all(updatePromises.filter(Boolean));
+      await Promise.all(promises);
 
-    alert("Answers updated successfully!");
-  } catch (error) {
-    console.error("Error updating answers:", error);
-    alert("Failed to update answers.");
-  }
-};
+      alert("Answers submitted!");
+      setHasUserInteracted(false); // Reset interaction flag after successful submit
+    } catch (err) {
+      console.error("Failed to submit answers:", err);
+      alert("Submission failed.");
+    }
+  };
 
+  const handleUpdate = async () => {
+    if (!userId) {
+      alert("User not found.");
+      return;
+    }
 
-  const addAnswer = useAddAnsMutation();
-const handleSubmit = async () => {
-  if (!userId) {
-    alert("User not found. Please log in.");
-    return;
-  }
+    try {
+      const updatePromises = results.map((res) => {
+        if (res.data && res.data.length > 0) {
+          const latest = res.data[res.data.length - 1];
 
-  try {
-    const entries = Object.entries(selectedOptions); // [ [questionId, [opt1, opt2]], ... ]
+          if (!latest || !latest.answerId || !latest.questionId) return null;
 
-    // Map each entry to a mutation call
-    const promises = entries.map(([questionId, selectedOptionsArray]) => {
-      const inputVariable = {
-        input: {
-          answerId: uuidv4(),
-          questionId,
-          selectedOptions: selectedOptionsArray,
-          userId, // userId is guaranteed to be string here
-        },
-      };
+          const input: UpdateAnswerModelMutationVariables = {
+            input: {
+              answerId: latest.answerId,
+              questionId: latest.questionId,
+              selectedOptions: selectedOptions[latest.questionId] || [],
+              userId,
+            },
+          };
 
-      // Return the mutation promise
-      return addAnswer.mutateAsync(inputVariable);
-    });
+          return updateAnswer.mutateAsync(input);
+        }
+        return null;
+      });
 
-    // Wait for all mutations to complete
-    await Promise.all(promises);
+      await Promise.all(updatePromises.filter(Boolean));
 
-    alert("All answers submitted successfully!");
-  } catch (err) {
-    console.error("Failed to submit answers:", err);
-    alert("Failed to submit answers");
-  }
-};
+      alert("Answers updated.");
+      setHasUserInteracted(false); // Reset interaction flag after successful update
+    } catch (error) {
+      console.error("Error updating answers:", error);
+      alert("Update failed.");
+    }
+  };
 
-
-  if (loading) {
-    return <p className="p-4 text-sm text-gray-600">Loading questions...</p>;
-  }
-
-  if (!questions || questions.length === 0) {
-    return <p className="p-4 text-sm text-gray-500">No questions available.</p>;
-  }
+  if (loading) return <p className="p-4 text-gray-600">Loading questions...</p>;
+  if (!questions || questions.length === 0) return <p>No questions found.</p>;
 
   return (
-    <div className="p-4">
+    <div className="p-4 flex flex-col max-h-[calc(100vh-120px)]">
       <h2 className="text-lg font-semibold mb-4">Questions</h2>
-      <ul className="space-y-2 max-h-64 overflow-y-auto">
-        {questions.map((q) => (
-          <li key={q.questionId} className="bg-gray-100 p-3 rounded shadow-sm">
-            <p className="font-medium mb-2">{q.question}</p>
-            {q.options?.length > 0 && (
-              <div className="space-y-1 text-sm text-gray-700">
-                {q.options.map((opt, index) => (
-                  <label key={index} className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      value={opt}
-                      checked={
-                        selectedOptions[q.questionId]?.includes(opt) || false
-                      }
-                      onChange={() => handleCheckboxChange(q.questionId, opt)}
-                      className="text-blue-600"
-                    />
-                    <span>{opt}</span>
-                  </label>
-                ))}
-              </div>
-            )}
-          </li>
-        ))}
-      </ul>
+      {/* Debug info - remove in production */}
+      {/* {process.env.NODE_ENV === "development" && (
+        <div className="mb-4 p-2 bg-yellow-100 text-xs">
+          <p>Debug: User interacted: {hasUserInteracted.toString()}</p>
+          <p>Selected options: {JSON.stringify(selectedOptions, null, 2)}</p>
+        </div>
+      )} */}
 
-      <Button
-        onClick={toggle ? handleUpdate : handleSubmit}
-        variant="primary"
-        className="mt-6 px-4 py-2"
-      >
-        {toggle ? "Update Answers" : "Submit Answers"}
-      </Button>
+      {/* Scrollable question list */}
+      <div className="overflow-y-auto pr-2 space-y-2 flex-grow">
+        {questions.map((q, index) => (
+          <div key={q.questionId} className="bg-gray-100 p-3 rounded shadow-sm">
+            <p className="font-medium mb-2">
+              <b>
+                {index + 1}. {q.question}
+              </b>
+            </p>
+            <div className="space-y-1 text-sm">
+              {q.options.map((opt, i) => (
+                <label
+                  key={i}
+                  className="flex items-center space-x-2 cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    checked={
+                      selectedOptions[q.questionId]?.includes(opt) || false
+                    }
+                    onChange={() => handleCheckboxChange(q.questionId, opt)}
+                    className="accent-blue-600"
+                  />
+                  <span>{opt}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      {/* Submit/Update button */}
+      <div className="pt-4">
+        <div className="pt-4 flex justify-start">
+          <button
+            onClick={toggle ? handleUpdate : handleSubmit}
+            className="px-6 py-2 rounded text-white bg-blue-600 hover:bg-blue-700 transition"
+          >
+            {toggle ? "Update Answers" : "Submit Answers"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
-
