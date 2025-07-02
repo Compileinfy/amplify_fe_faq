@@ -80,7 +80,11 @@ export default function Home() {
               onBackToWelcome={handleBackToDashboard}
             />
           ) : (
-            <QuestionList questions={questions || []} loading={isLoading} />
+            <QuestionList
+              questions={questions || []}
+              loading={isLoading}
+              onSubmitSuccess={handleBackToDashboard}
+            />
           )
         ) : (
           <h1 className="text-3xl font-bold text-gray-700 text-center mt-12">

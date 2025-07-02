@@ -16,6 +16,7 @@ export type Question = {
 export type QLProps = {
   questions: Question[];
   loading: boolean;
+  onSubmitSuccess?: () => void;
 };
 
 

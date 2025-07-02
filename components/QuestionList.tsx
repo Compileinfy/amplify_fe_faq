@@ -7,20 +7,10 @@ import { getCurrentUser } from "aws-amplify/auth";
 import { v4 as uuidv4 } from "uuid";
 import { useUpdateAns } from "@/hooks/useUpdateAns";
 import { UpdateAnswerModelMutationVariables } from "@/app/graphql/API";
+import { QLProps } from "@/types/types";
 
-type Question = {
-  questionId: string;
-  question: string;
-  options: string[];
-  formId: string;
-};
 
-type Props = {
-  questions: Question[];
-  loading: boolean;
-};
-
-export default function QuestionList({ questions, loading }: Props) {
+export default function QuestionList({ questions, loading, onSubmitSuccess }: QLProps) {
   const [selectedOptions, setSelectedOptions] = useState<
     Record<string, string[]>
   >({});
@@ -122,6 +112,7 @@ export default function QuestionList({ questions, loading }: Props) {
 
       alert("Answers submitted!");
       setHasUserInteracted(false); // Reset interaction flag after successful submit
+      onSubmitSuccess?.();
     } catch (err) {
       console.error("Failed to submit answers:", err);
       alert("Submission failed.");
@@ -159,6 +150,7 @@ export default function QuestionList({ questions, loading }: Props) {
 
       alert("Answers updated.");
       setHasUserInteracted(false); // Reset interaction flag after successful update
+      onSubmitSuccess?.(); 
     } catch (error) {
       console.error("Error updating answers:", error);
       alert("Update failed.");
@@ -171,15 +163,6 @@ export default function QuestionList({ questions, loading }: Props) {
   return (
     <div className="p-4 flex flex-col max-h-[calc(100vh-120px)]">
       <h2 className="text-lg font-semibold mb-4">Questions</h2>
-      {/* Debug info - remove in production */}
-      {/* {process.env.NODE_ENV === "development" && (
-        <div className="mb-4 p-2 bg-yellow-100 text-xs">
-          <p>Debug: User interacted: {hasUserInteracted.toString()}</p>
-          <p>Selected options: {JSON.stringify(selectedOptions, null, 2)}</p>
-        </div>
-      )} */}
-
-      {/* Scrollable question list */}
       <div className="overflow-y-auto pr-2 space-y-2 flex-grow">
         {questions.map((q, index) => (
           <div key={q.questionId} className="bg-gray-100 p-3 rounded shadow-sm">
