@@ -1,25 +1,47 @@
-// src/app/page.tsx
 "use client";
 
-import QuestionForm from "@/components/QuestionForm";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { getCurrentUser } from "aws-amplify/auth";
+import { useQuestionsByFormId } from "@/hooks/useGetQuestionsByFormId";
+import { useUserGroup } from "@/hooks/useUserGroup";
+
 import Sidebar from "@/components/Sidebar";
+import QuestionForm from "@/components/QuestionForm";
 import QuestionList from "@/components/QuestionList";
 import UpdateList from "@/components/UpdateList";
 import UserList from "@/components/userslist";
-import { useEffect, useState } from "react";
-import { useQuestionsByFormId } from "@/hooks/useGetQuestionsByFormId";
-import { useUserGroup } from "@/hooks/useUserGroup";
 
 export default function Home() {
   const [showForm, setShowForm] = useState(false);
   const [selectedFormId, setSelectedFormId] = useState<string | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [userGroup, setUserGroup] = useState<string | null>(null);
-  const { getUserGroup } = useUserGroup();
+  const [userId, setUserId] = useState<string | null>(null); // <-- added this
 
+  const { getUserGroup } = useUserGroup();
+  const router = useRouter();
+
+  // ✅ Fetch authenticated user
   useEffect(() => {
-    getUserGroup().then(setUserGroup);
-  }, [getUserGroup]);
+    async function fetchUser() {
+      try {
+        const user = await getCurrentUser();
+        setUserId(user.username);
+      } catch {
+        setUserId(null);
+        router.push("/signin");
+      }
+    }
+    fetchUser();
+  }, [router]);
+
+  // ✅ Fetch user group after auth
+  useEffect(() => {
+    if (userId) {
+      getUserGroup().then(setUserGroup);
+    }
+  }, [userId, getUserGroup]);
 
   const handleShowForm = () => {
     setShowForm(true);
